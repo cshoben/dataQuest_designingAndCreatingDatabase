@@ -1,0 +1,282 @@
+---
+title: "Exploring the Data"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+
+
+*Resources and inspiration:*
+https://app.dataquest.io/c/66/m/376/guided-project%3A-designing-and-creating-a-database/1/exploring-the-data
+https://github.com/MuhuriJSON/DesigningAndCreatingDatabase/blob/master/DesigningAndCreatingDatabase.ipynb
+
+
+
+
+
+
+Import packages
+```{r}
+library(tidyverse)
+library(dplyr)
+library(RSQLite)
+```
+
+Read in each of the files
+```{r}
+gameLog <- read_csv("data/game_log.csv")
+parkCodes <- read_csv("data/park_codes.csv")
+personCodes <- read_csv("data/person_codes.csv")
+teamCodes <- read_csv("data/team_codes.csv")
+```
+
+Goal: Exploratory Data Analysis
+I will perform an EDA to assist in the creation of the normalized database. During this process I want to become familiar with the meaning of each column in each file. And I will want to think about the relationships between columns both within each file and across different files. 
+
+Let's start by looking at the number of columns and rows.
+```{r}
+dim(gameLog)
+```
+It looks likewe have over 171k entries (games) and 161 columns. 
+
+Let's look at the first 10 rows to get a feel for the data. 
+```{r}
+head(gameLog, 10)
+```
+
+Included with these files is a .txt file containing information about the fields in the main file (game_log.csv). 
+
+```{r}
+fieldData <- read.delim("data/game_log_fields.txt")
+```
+
+```{r}
+field_data
+```
+
+After exploring the gameLog file, I have noted that these data give basic information about the game including game number, game number, visiting team info (name, league, manager, pitchers, batters, offensive stats, pitching stats, and defensive stats), same for home team, game information (scoring, location and completion) , umpire info, and acquisition info (how complete the data is for that game). 
+Focus questions to answer:
+*What does each defensive position number represent?*
+Each team's starting players has their player ID, name, and defensive position listed in the gameLog. Values 1-9 are used. According to Wikipedia (https://en.wikipedia.org/wiki/Baseball_positions) the 9 positions are designated as follows:
+1 - pitcher
+2 - catcher
+3 - first baseman
+4 - second baseman
+5 - third baseman
+6 - shortstop
+7 - left fielder
+8 - center fielder
+9 - right fielder
+
+*What are the values in the various league fields, and which leagues do they represent?*
+```{r}
+unique(gameLog$v_league)
+unique(gameLog$h_league)
+```
+It appears that there are 6 difference leagues referenced by two capital letters in this data set. 
+Using Google, I have found the following professional league information. 
+NL - National League (part of MLB)
+AA - American Association (independent, founded in 2005)
+UA - Union Association (used to be MLB, only exists in 1884)
+PL - Players League (independent, only existed 1890?)
+AL - American League (part of MLB)
+FL - Federal League (independent, 1914-1915)
+I would like to check these findings against my data. 
+
+Let's first check the date range that we see the AA league
+```{r}
+aaLeague <- 
+dplyr::filter(gameLog, v_league == "AA" | h_league == "AA")
+min(aaLeague$date)
+max(aaLeague$date)
+```
+Here I used the '|' aka OR operator to select all games where either the visiting team or the home team was in the AA league. 
+It looks like the AA league is only listed for games played from 1882 to 1884. 
+With more googling, I found that there have existed two American Association baseball leagues. The American Association of Base Ball Clubs was the one that existed in the 19th century, from 1882 to 1891. This matches up with the min and max date that we see in the filtered tiddle. 
+
+Updates league names:
+NL - National League (part of MLB)
+AA - American Association *of Base Ball Clubs* (independent, 1882-1891)
+UA - Union Association (used to be MLB, only exists in 1884)
+PL - Players League (independent, only existed 1890?)
+AL - American League (part of MLB)
+FL - Federal League (independent, 1914-1915)
+
+I will next check the Union Association
+```{r}
+uaLeague <- 
+dplyr::filter(gameLog, v_league == "UA" | h_league == "UA")
+min(uaLeague$date)
+max(uaLeague$date)
+```
+The results match what I would expect. 
+
+Let's check the Players League. 
+```{r}
+plLeague <- 
+  dplyr::filter(gameLog, v_league == "PL" | h_league == "PL")
+min(plLeague$date)
+max(plLeague$date)
+```
+Yup, the year 1890 is the only year we see this league in the data set and this lines up with what I Googled. 
+
+Last, is to check the FL league which I believe to be the Federal League. 
+```{r}
+flLeague <- 
+  dplyr::filter(gameLog, v_league == "FL" | h_league == "FL")
+min(flLeague$date)
+max(flLeague$date)
+```
+Hooray! This also lines up with my Googling. 
+
+
+
+
+
+
+Let's now explore the additional "helper" files loaded previously. 
+
+```{r}
+dim(parkCodes)
+head(parkCodes, 10)
+```
+The 'parkCodes' file tells us the details for each park, with the unique identifier being the park_id column. This appears to be an exhaustive list, including parks that have closed. The rows appear to be organized alphabetically based on the park_id column. park_id is also a column in the gameLog file. 
+
+```{r}
+dim(personCodes)
+head(personCodes, 10)
+```
+The personCodes file gives info on the players name and the date of their debut(as either a player, manager, coach, or umpire. There are over 20,000 people codes. 
+Cross referencing the gameLog file, the id field in the personCodes file is used in the hp_umpire_id, v_manager_id, h_manager_id,  winning_pitcher_id, losing_pitcher_id, and many more fields on that is *_id giving the person code for different positions in the game. 
+
+Last, let's explore the teamCodes file. 
+```{r}
+dim(teamCodes)
+head(teamCodes, 10)
+```
+There are 150 teams, each with them team_id, league, start/end, city, any nickname, franch_is, and seq. It looks like the value '0' is used in the 'end' column to indicate a team still exists. The team_id is also a field in the 'gameLog' file. 
+At this time, I do not know what 'seq' refers to. Maybe by exploring this column's data more, I can gain insight. 
+
+```{r}
+range(teamCodes$seq)
+unique(teamCodes$seq)
+```
+It seems that the minimum is 1 and the maximum value is 4. 
+
+```{r}
+table(teamCodes$seq)
+```
+And the majority of the values are '1'. 
+Still not sure what it means but maybe it will make more sense as I move forward through the project. 
+
+
+
+
+## Importing Data into SQLite
+
+Step 1: Designate a primary key
+
+Exploring  the data dictionary available from Retrosheet (the website this data came from), we see that they have already designed a key using date, home team, and number of the game. After importing our data into SQLite we will construct this unique_id column ourselves using these values to match the way Retrosheet refers to unique events. 
+
+https://app.dataquest.io/c/66/m/376/guided-project%3A-designing-and-creating-a-database/2/importing-data-into-sqlite
+
+This establishes a connect to an existing database or creates one if it does not already exist. The database name here is "mlb.db"
+```{r}
+connection <- dbConnect(SQLite(), "mlb.db")
+```
+
+
+We want to write the name by referring to the "conn" which is the connection object created above. We will call the table "game_log" and we will used the data from the gameLog object. It will be easier to load the data into a variable and pass that as the value arg for 'dbWriteTable()' rather have adding all the data manually. 
+```{r}
+RSQLite::dbWriteTable(connection, "game_log", gameLog, 
+             row.names = FALSE, header = TRUE)
+
+```
+
+Same idea with other data frames. 
+```{r}
+RSQLite::dbWriteTable(connection, "person_codes", personCodes, 
+             row.names = FALSE, header = TRUE)
+
+RSQLite::dbWriteTable(connection, "team_codes", teamCodes, 
+             row.names = FALSE, header = TRUE)
+
+RSQLite::dbWriteTable(connection, "park_codes", parkCodes,
+             row.names = FALSE, header = TRUE)
+```
+
+
+Let's ensure that all the tables were created. 
+```{r}
+dbListTables(connection)
+```
+Success. All four have been made. 
+
+Now we will create the new column in *game_log* to hold the unique ID that will refer to each row. This will be a compound key, using data from multiple fields. 
+
+```{r}
+alter_game_log_command <- "
+  ALTER TABLE game_log
+  ADD COLUMN game_id TXT;
+"
+```
+
+Let's execute the command created above. 
+```{r}
+dbExecute(connection, alter_game_log_command)
+```
+
+Next, I will use string concatenation to update this new column. 
+
+```{r}
+update_game_log_command <- "
+  UPDATE game_log
+  SET game_id = date || h_name || number_of_game
+  WHERE game_id IS NULL;
+"
+```
+
+Execute the command:
+```{r}
+dbExecute(connection, update_game_log_command)
+```
+
+
+```{r}
+check_query_1 <- "
+  SELECT
+    game_id, 
+    date,
+    h_name, 
+    number_of_game
+  FROM game_log
+  LIMIT 5;
+"
+```
+
+We will capture this result in a new variable
+```{r}
+check <- dbGetQuery(connection, check_query_1)
+head(check)
+```
+
+
+
+
+
+
+
+
