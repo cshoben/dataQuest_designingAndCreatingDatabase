@@ -1,22 +1,3 @@
----
-title: "Exploring the Data"
-output: html_notebook
----
-
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
-
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
-
-```{r}
-plot(cars)
-```
-
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
-
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
-
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
-
 
 
 *Resources and inspiration:*
@@ -25,7 +6,7 @@ https://github.com/MuhuriJSON/DesigningAndCreatingDatabase/blob/master/Designing
 
 
 
-
+## Creating a Database: SQLite
 
 
 Import packages
@@ -144,7 +125,7 @@ Hooray! This also lines up with my Googling.
 
 
 
-
+#### Exploring helper files
 
 
 Let's now explore the additional "helper" files loaded previously. 
@@ -193,7 +174,7 @@ Exploring  the data dictionary available from Retrosheet (the website this data 
 
 https://app.dataquest.io/c/66/m/376/guided-project%3A-designing-and-creating-a-database/2/importing-data-into-sqlite
 
-This establishes a connect to an existing database or creates one if it does not already exist. The database name here is "mlb.db"
+This establishes a connection to an existing database or creates one if it does not already exist. The database name here is "mlb.db"
 ```{r}
 connection <- dbConnect(SQLite(), "mlb.db")
 ```
@@ -298,8 +279,195 @@ For team_codes
 
 I am using dbdesigner.net to create my database schema. 
 
+
+## Creating the normalized database
+
+### Begin with tables with no foreign keys
+
+1) alter the person_codes table to only have person_id, first_name, and last_name. 
+
 ```{r}
-str(gameLog) 
+dbListTables(connection)
 ```
 
+```{r}
+dbListFields(connection, "person_codes")
+```
+
+```{r}
+drop_player_debut <- "
+  ALTER TABLE person_codes
+  DROP COLUMN player_debut;"
+drop_mgr_debut <- "
+  ALTER TABLE person_codes
+  DROP COLUMN mgr_debut;"
+drop_coach_debut <- "
+  ALTER TABLE person_codes
+  DROP COLUMN coach_debut;"
+drop_ump_debut <- "
+  ALTER TABLE person_codes
+  DROP COLUMN ump_debut;"
+
+```
+```{r}
+dbExecute(connection, drop_player_debut)
+dbExecute(connection, drop_mgr_debut)
+dbExecute(connection, drop_coach_debut)
+dbExecute(connection, drop_ump_debut)
+```
+
+```{r}
+dbListFields(connection, "person_codes")
+```
+The last thing to change the remaining column names into "person_id", "last_name", and "first_name".  
+
+
+```{r}
+rename_id_person_codes <- "
+  ALTER TABLE person_codes
+  RENAME COLUMN id to person_id;"
+rename_last_person_codes <- "
+  ALTER TABLE person_codes
+  RENAME COLUMN last to last_name;"
+rename_first_person_codes <- "
+  ALTER TABLE person_codes
+  RENAME COLUMN first to first_name;"
+```
+```{r}
+dbExecute(connection, rename_id_person_codes)
+dbExecute(connection, rename_last_person_codes)
+dbExecute(connection, rename_first_person_codes)
+
+```
+```{r}
+dbListFields(connection, "person_codes")
+
+```
+
+2) edit park_codes to reflect changes. 
+  - remove 'start', 'end', and 'league' as this information will be available in the game_log table. 
+
+```{r}
+dbListFields(connection, "park_codes")
+```
+
+```{r}
+drop_start_park <- "
+  ALTER TABLE park_codes
+  DROP COLUMN start;"
+drop_end_park <- "
+  ALTER TABLE park_codes
+  DROP COLUMN end;"
+drop_league_park <- "
+  ALTER TABLE park_codes
+  DROP COLUMN league;"
+```
+
+```{r}
+dbExecute(connection, drop_start_park)
+dbExecute(connection, drop_end_park)
+dbExecute(connection, drop_league_park)
+dbListFields(connection, "park_codes")
+```
+3) Create the new "player_position_type" table. I will import a .csv file containing all the information for this table. 
+
+Code to drop the table if it exists, we will recreate it in the proceeding code
+```{r}
+player_position_precaution <- "
+  DROP TABLE IF EXISTS player_position_type;"
+dbExecute(connection, player_position_precaution)
+```
+
+
+```{r}
+playerPositionType = read_csv("data/appearance_type.csv")
+```
+
+```{r}
+dbWriteTable(conn = connection, name = "player_position_type", 
+             value = playerPositionType, 
+             row.names = FALSE, header = TRUE)
+```
+```{r}
+check_player_pos <- "
+  SELECT *
+  FROM player_position_type;"
+check <- dbGetQuery(connection, check_player_pos)
+head(check)
+```
+
+
+
+
+HEREEEEEEEEE
+
+
+
+
+
+
+### Add Game and Team tables
+
+
+It will be easiest to create a new game_log table and import the selected columns versus deleting columns. 
+This new table will be called "game"
+Foreign keys can be set at this time. 
+
+
+```{r}
+create_game_table_query <- "
+  CREATE TABLE IF NOT EXISTS game (
+    game_id TEXT PRIMARY KEY, 
+    date TEXT, 
+    number_of_game INTEGER, 
+    park_id TEXT,
+    day_of_week TEXT,
+    length_outs INTEGER, 
+    day_night TEXT, 
+    completion TEXT, 
+    forfeit TEXT, 
+    attendance INTEGER, 
+    length_minutes INTEGER, 
+    additional info TEXT, 
+    acquisition_info TEXT,
+    FOREIGN KEY (park_id) REFERENCES park_codes(park_id)
+  );
+" 
+```
+
+
+```{r}
+
+dbExecute(connection, create_game_table_query)
+```
+
+```{r}
+# Use single quotes to handle the double quotes in the switch case for day_night
+
+insert_to_game_query <- '
+  INSERT OR IGNORE INTO game
+  SELECT
+    game_id,
+    date,
+    number_of_game, 
+    length_outs, 
+    park_id, 
+    length_outs, 
+    CASE
+      WHEN day_night = "D" THEN 1
+      WHEN day_night = "N" then 0
+      ELSE NULL
+      END
+      AS day,
+    completion, 
+    forfeit, 
+    protest, 
+    attendance,
+    length_minutes,
+    additional_info,
+    acquisition_info
+  FROM game_log;
+'
+
+```
 
