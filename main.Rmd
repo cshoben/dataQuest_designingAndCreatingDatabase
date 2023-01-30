@@ -442,6 +442,12 @@ It will be easiest to create a new game_log table and import the selected column
 This new table will be called "game"
 Foreign keys can be set at this time. 
 
+```{r}
+game_table_precaution <- "
+  DROP TABLE IF EXISTS game;"
+dbExecute(connection, game_table_precaution)
+```
+
 
 ```{r}
 create_game_table_query <- "
@@ -450,23 +456,18 @@ create_game_table_query <- "
     date TEXT, 
     number_of_game INTEGER, 
     park_id TEXT,
-    day_of_week TEXT,
     length_outs INTEGER, 
-    day_night TEXT, 
+    day TEXT, 
     completion TEXT, 
     forfeit TEXT, 
+    protest TEXT,
     attendance INTEGER, 
     length_minutes INTEGER, 
-    additional info TEXT, 
+    additional_info TEXT, 
     acquisition_info TEXT,
     FOREIGN KEY (park_id) REFERENCES park_codes(park_id)
   );
 " 
-```
-
-
-```{r}
-
 dbExecute(connection, create_game_table_query)
 ```
 
@@ -478,9 +479,8 @@ insert_to_game_query <- '
   SELECT
     game_id,
     date,
-    number_of_game, 
-    length_outs, 
-    park_id, 
+    number_of_game,
+    park_id,
     length_outs, 
     CASE
       WHEN day_night = "D" THEN 1
@@ -498,5 +498,6 @@ insert_to_game_query <- '
   FROM game_log;
 '
 
+dbExecute(connection, insert_to_game_query)
+dbListFields(connection, "game")
 ```
-
