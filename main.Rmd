@@ -45,7 +45,7 @@ fieldData <- read.delim("data/game_log_fields.txt")
 ```
 
 ```{r}
-field_data
+fieldData
 ```
 
 After exploring the gameLog file, I have noted that these data give basic information about the game including game number, game number, visiting team info (name, league, manager, pitchers, batters, offensive stats, pitching stats, and defensive stats), same for home team, game information (scoring, location and completion) , umpire info, and acquisition info (how complete the data is for that game). 
@@ -168,6 +168,11 @@ Still not sure what it means but maybe it will make more sense as I move forward
 
 ## Importing Data into SQLite
 
+
+
+
+
+
 Step 1: Designate a primary key
 
 Exploring  the data dictionary available from Retrosheet (the website this data came from), we see that they have already designed a key using date, home team, and number of the game. After importing our data into SQLite we will construct this unique_id column ourselves using these values to match the way Retrosheet refers to unique events. 
@@ -180,7 +185,39 @@ connection <- dbConnect(SQLite(), "mlb.db")
 ```
 
 
+
+Drop all existing tables so code can be re-ran. 
+
+```{r}
+game_log_precaution <- "
+  DROP TABLE IF EXISTS game_log;"
+dbExecute(connection, game_log_precaution)
+
+person_codes_precaution <- "
+  DROP TABLE IF EXISTS person_codes;"
+dbExecute(connection, person_codes_precaution)
+
+team_codes_precaution <- "
+  DROP TABLE IF EXISTS team_codes;"
+dbExecute(connection, team_codes_precaution)
+
+park_codes_precaution <- "
+  DROP TABLE IF EXISTS park_codes;"
+dbExecute(connection, park_codes_precaution)
+
+
+
+```
+
+
+
+
+
+
+
+
 We want to write the name by referring to the "conn" which is the connection object created above. We will call the table "game_log" and we will used the data from the gameLog object. It will be easier to load the data into a variable and pass that as the value arg for 'dbWriteTable()' rather have adding all the data manually. 
+
 ```{r}
 RSQLite::dbWriteTable(connection, "game_log", gameLog, 
              row.names = FALSE, header = TRUE)
@@ -395,14 +432,6 @@ check_player_pos <- "
 check <- dbGetQuery(connection, check_player_pos)
 head(check)
 ```
-
-
-
-
-HEREEEEEEEEE
-
-
-
 
 
 
