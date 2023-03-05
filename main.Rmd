@@ -1,7 +1,14 @@
-# Designing and Creating a Database: SQLite
+
+---
+title: "Designing and Creating a Database: SQLite"
+output: github_document
+---
+
 
 *Resources and inspiration:*
+
 https://app.dataquest.io/c/66/m/376/guided-project%3A-designing-and-creating-a-database/1/exploring-the-data
+
 https://github.com/MuhuriJSON/DesigningAndCreatingDatabase/blob/master/DesigningAndCreatingDatabase.ipynb
 
 
@@ -12,7 +19,8 @@ library(tidyverse)
 library(dplyr)
 library(RSQLite)
 ```
-
+  
+  
 Read in data files
 ```{r}
 gameLog <- read_csv("data/game_log.csv")
@@ -49,8 +57,9 @@ game number, game number, visiting team info (name, league, manager, pitchers, b
 and defensive stats), same for home team, game information (scoring, location and completion) , umpire info, 
 and acquisition info (how complete the data is for that game). 
 
-#### Focus questions to answer:
-*What does each defensive position number represent?*
+#### Focus questions to answer:  
+
+**What does each defensive position number represent?**
 Each team's starting players has their player ID, name, and defensive position listed in the gameLog. Values 1-9 are used. According to Wikipedia (https://en.wikipedia.org/wiki/Baseball_positions) the 9 positions are designated as follows:
 1 - pitcher
 2 - catcher
@@ -62,7 +71,10 @@ Each team's starting players has their player ID, name, and defensive position l
 8 - center fielder
 9 - right fielder
 
-*What are the values in the various league fields, and which leagues do they represent?*
+  
+  
+
+**What are the values in the various league fields, and which leagues do they represent?**
 ```{r}
 unique(gameLog$v_league)
 unique(gameLog$h_league)
@@ -122,7 +134,8 @@ min(flLeague$date)
 max(flLeague$date)
 ```
 Hooray! This also lines up with my Googling. 
-
+  
+  
 
 
 #### Exploring helper files
@@ -313,6 +326,14 @@ For team_codes
 I am using dbdesigner.net to create my database schema. 
 
 ## Creating the normalized database
+
+
+![Normalized Data Schema](schema.png)
+
+
+
+
+
 
 ### Begin with tables with no foreign keys
 

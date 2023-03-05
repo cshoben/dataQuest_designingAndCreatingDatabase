@@ -1,10 +1,10 @@
 Designing and Creating a Database: SQLite
 ================
 
-# Designing and Creating a Database: SQLite
-
 *Resources and inspiration:*
+
 <https://app.dataquest.io/c/66/m/376/guided-project%3A-designing-and-creating-a-database/1/exploring-the-data>
+
 <https://github.com/MuhuriJSON/DesigningAndCreatingDatabase/blob/master/DesigningAndCreatingDatabase.ipynb>
 
 Import packages
@@ -143,7 +143,7 @@ and acquisition info (how complete the data is for that game).
 
 #### Focus questions to answer:
 
-*What does each defensive position number represent?* Each team’s
+**What does each defensive position number represent?** Each team’s
 starting players has their player ID, name, and defensive position
 listed in the gameLog. Values 1-9 are used. According to Wikipedia
 (<https://en.wikipedia.org/wiki/Baseball_positions>) the 9 positions are
@@ -151,8 +151,8 @@ designated as follows: 1 - pitcher 2 - catcher 3 - first baseman 4 -
 second baseman 5 - third baseman 6 - shortstop 7 - left fielder 8 -
 center fielder 9 - right fielder
 
-*What are the values in the various league fields, and which leagues do
-they represent?*
+**What are the values in the various league fields, and which leagues do
+they represent?**
 
 ``` r
 unique(gameLog$v_league)
@@ -620,6 +620,8 @@ each team can be derived from the game_log table.
 I am using dbdesigner.net to create my database schema.
 
 ## Creating the normalized database
+
+![Normalized Data Schema](schema.png)
 
 ### Begin with tables with no foreign keys
 
