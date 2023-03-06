@@ -345,7 +345,7 @@ SQLite we will construct this unique_id column ourselves using these
 values to match the way Retrosheet refers to unique events.
 
 <https://app.dataquest.io/c/66/m/376/guided-project%3A-designing-and-creating-a-database/2/importing-data-into-sqlite>
-<br>
+<br> <br>
 
 #### Step 2: Create the database
 
@@ -406,7 +406,7 @@ alter_game_log_command <- "
 "
 ```
 
-Let’s execute the command created above.
+Execute the command created above.
 
 ``` r
 dbExecute(connection, alter_game_log_command)
@@ -414,7 +414,7 @@ dbExecute(connection, alter_game_log_command)
 
     ## [1] 0
 
-Next, I will use string concatenation to update this new column.
+Next, we will use string concatenation to update this new column.
 
 ``` r
 update_game_log_command <- "
@@ -458,86 +458,48 @@ head(check)
     ## 4 18710508.0CH10.0 18710508    CH1              0
     ## 5 18710509.0TRO0.0 18710509    TRO              0
 
-<br>
+This quick check helps us visualize the success of adding the new
+primary key to the table. <br>
 
 ## Looking for Normalization Opportunities
 
-\*\* A first step to normalizing is removing redundant data. For
-example, the player names column in the game_log table such as
-‘v_player_1\_name’, etc. can be derived by cross referencing the player
-id to the person_codes table. The names should be removed from the
-game_log table as this is redundant data.
+A first step to normalizing is removing redundant data. For example, the
+player names column in the game_log table such as ‘v_player_1\_name’,
+etc. can be derived by cross referencing the player id to the
+person_codes table. The names should be removed from the game_log table
+as this is redundant data.
 
 ``` r
-head(gameLog)
+gameLog$v_player_1_name[1]
 ```
 
-    ## # A tibble: 6 × 161
-    ##       date number_of_game day_of_week v_name v_league v_game_number h_name
-    ##      <dbl>          <dbl> <chr>       <chr>  <chr>            <dbl> <chr> 
-    ## 1 18710504              0 Thu         CL1    <NA>                 1 FW1   
-    ## 2 18710505              0 Fri         BS1    <NA>                 1 WS3   
-    ## 3 18710506              0 Sat         CL1    <NA>                 2 RC1   
-    ## 4 18710508              0 Mon         CL1    <NA>                 3 CH1   
-    ## 5 18710509              0 Tue         BS1    <NA>                 2 TRO   
-    ## 6 18710511              0 Thu         CH1    <NA>                 2 CL1   
-    ## # … with 154 more variables: h_league <chr>, h_game_number <dbl>,
-    ## #   v_score <dbl>, h_score <dbl>, length_outs <dbl>, day_night <chr>,
-    ## #   completion <lgl>, forfeit <lgl>, protest <chr>, park_id <chr>,
-    ## #   attendance <dbl>, length_minutes <dbl>, v_line_score <chr>,
-    ## #   h_line_score <chr>, v_at_bats <dbl>, v_hits <dbl>, v_doubles <dbl>,
-    ## #   v_triples <dbl>, v_homeruns <dbl>, v_rbi <dbl>, v_sacrifice_hits <dbl>,
-    ## #   v_sacrifice_flies <dbl>, v_hit_by_pitch <dbl>, v_walks <dbl>, …
+    ## [1] "Deacon White"
 
 ``` r
-head (parkCodes)
+personCodes %>% filter_all(any_vars(. %in% c("Deacon")))
 ```
 
-    ## # A tibble: 6 × 9
-    ##   park_id name                        aka   city  state start end   league notes
-    ##   <chr>   <chr>                       <chr> <chr> <chr> <chr> <chr> <chr>  <chr>
-    ## 1 ALB01   Riverside Park              <NA>  Alba… NY    09/1… 05/3… NL     TRN:…
-    ## 2 ALT01   Columbia Park               <NA>  Alto… PA    04/3… 05/3… UA     <NA> 
-    ## 3 ANA01   Angel Stadium of Anaheim    Edis… Anah… CA    04/1… <NA>  AL     <NA> 
-    ## 4 ARL01   Arlington Stadium           <NA>  Arli… TX    04/2… 10/0… AL     <NA> 
-    ## 5 ARL02   Rangers Ballpark in Arling… The … Arli… TX    04/1… <NA>  AL     <NA> 
-    ## 6 ATL01   Atlanta-Fulton County Stad… <NA>  Atla… GA    04/1… 09/2… NL     <NA>
+    ## # A tibble: 7 × 7
+    ##   id       last      first  player_debut mgr_debut  coach_debut ump_debut 
+    ##   <chr>    <chr>     <chr>  <chr>        <chr>      <chr>       <chr>     
+    ## 1 donad101 Donahue   Deacon 09/16/1943   <NA>       <NA>        <NA>      
+    ## 2 joned101 Jones     Deacon 09/08/1962   <NA>       04/08/1976  <NA>      
+    ## 3 joned107 Jones     Deacon 09/23/1916   <NA>       <NA>        <NA>      
+    ## 4 mcgud101 McGuire   Deacon 06/21/1884   06/24/1898 04/11/1912  05/21/1886
+    ## 5 phild101 Phillippe Deacon 04/21/1899   <NA>       <NA>        06/10/1903
+    ## 6 vanbd101 Van Buren Deacon 04/21/1904   <NA>       <NA>        <NA>      
+    ## 7 whitd102 White     Deacon 05/04/1871   08/17/1872 <NA>        06/22/1880
 
-``` r
-head (personCodes)
-```
+It’s also important to note that the player id is more informative since
+there are players with the same first and last name in the data.
 
-    ## # A tibble: 6 × 7
-    ##   id       last    first    player_debut mgr_debut coach_debut ump_debut
-    ##   <chr>    <chr>   <chr>    <chr>        <chr>     <chr>       <chr>    
-    ## 1 aardd001 Aardsma David    04/06/2004   <NA>      <NA>        <NA>     
-    ## 2 aaroh101 Aaron   Hank     04/13/1954   <NA>      <NA>        <NA>     
-    ## 3 aarot101 Aaron   Tommie   04/10/1962   <NA>      04/06/1979  <NA>     
-    ## 4 aased001 Aase    Don      07/26/1977   <NA>      <NA>        <NA>     
-    ## 5 abada001 Abad    Andy     09/10/2001   <NA>      <NA>        <NA>     
-    ## 6 abadf001 Abad    Fernando 07/28/2010   <NA>      <NA>        <NA>
-
-``` r
-head (teamCodes)
-```
-
-    ## # A tibble: 6 × 8
-    ##   team_id league start   end city      nickname        franch_id   seq
-    ##   <chr>   <chr>  <dbl> <dbl> <chr>     <chr>           <chr>     <dbl>
-    ## 1 ALT     UA      1884  1884 Altoona   Mountain Cities ALT           1
-    ## 2 ARI     NL      1998     0 Arizona   Diamondbacks    ARI           1
-    ## 3 BFN     NL      1879  1885 Buffalo   Bisons          BFN           1
-    ## 4 BFP     PL      1890  1890 Buffalo   Bisons          BFP           1
-    ## 5 BL1     <NA>    1872  1874 Baltimore Canaries        BL1           1
-    ## 6 BL2     AA      1882  1891 Baltimore Orioles         BL2           1
-
-For game_log: \* Each game lists info for 9 players from each team. This
+For game_log: Each game lists info for 9 players from each team. This
 data can be represented by a separate table, which each player and their
-appearances tracked. For park_codes: \* The ‘start’ and ‘end’ dates can
-be derived from the game_log table. For person_codes: \* The
-‘player_debut’, ‘mgr_debut’, and ‘coach_debut’ can be derived from data
-in the game_log table. For team_codes \* The ‘start’ and ‘end’ data for
-each team can be derived from the game_log table.
+appearances tracked. For park_codes: The ‘start’ and ‘end’ dates can be
+derived from the game_log table. For person_codes: The ‘player_debut’,
+‘mgr_debut’, and ‘coach_debut’ can be derived from data in the game_log
+table. For team_codes: The ‘start’ and ‘end’ data for each team can be
+derived from the game_log table.
 
 ## Planning a Normalized Schema
 

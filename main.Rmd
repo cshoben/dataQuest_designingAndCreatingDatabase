@@ -27,7 +27,7 @@ knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 
 
 
-##  Exploratory Data Analysis
+## Exploratory Data Analysis
 I will perform an EDA to assist in the creation of the normalized database. 
 During this process I want to become familiar with the meaning of each column in each file. 
 And I will want to think about the relationships between columns both within each file and across different files. 
@@ -224,6 +224,7 @@ these values to match the way Retrosheet refers to unique events.
 
 https://app.dataquest.io/c/66/m/376/guided-project%3A-designing-and-creating-a-database/2/importing-data-into-sqlite
 <br>
+<br>
 
 #### Step 2: Create the database
 I will be using the package RSQLite to create and modify the database. 
@@ -300,12 +301,12 @@ alter_game_log_command <- "
 "
 ```
 
-Let's execute the command created above. 
+Execute the command created above. 
 ```{r}
 dbExecute(connection, alter_game_log_command)
 ```
 
-Next, I will use string concatenation to update this new column. 
+Next, we will use string concatenation to update this new column. 
 
 ```{r}
 update_game_log_command <- "
@@ -338,27 +339,30 @@ We will capture this result in a new variable
 check <- dbGetQuery(connection, check_query_1)
 head(check)
 ```
+This quick check helps us visualize the success of adding the new primary key to the table. 
 <br>
 
 ## Looking for Normalization Opportunities 
 
-** A first step to normalizing is removing redundant data. For example, the player names column in the game_log table such as 'v_player_1_name', etc. can be derived by cross referencing the player id to the person_codes table. The names should be removed from the game_log table as this is redundant data. 
+A first step to normalizing is removing redundant data. For example, the player names column in the game_log table such as 'v_player_1_name', etc. can be derived by cross referencing the player id to the person_codes table. The names should be removed from the game_log table as this is redundant data. 
 
 ```{r}
-head(gameLog)
+gameLog$v_player_1_name[1]
+personCodes %>% filter_all(any_vars(. %in% c("Deacon")))
+```
+It's also important to note that the player id is more informative since there are players with the same first and last name in the data. 
+
+```{r chunk-help-me-visualize-tables, echo=FALSE, results='hide'}
+head (gameLog)
 head (parkCodes)
 head (personCodes)
 head (teamCodes)
 ```
 
-For game_log:
-* Each game lists info for 9 players from each team. This data can be represented by a separate table, which each player and their appearances tracked. 
-For park_codes:
-* The 'start' and 'end' dates can be derived from the game_log table. 
-For person_codes:
-* The 'player_debut', 'mgr_debut', and 'coach_debut' can be derived from data in the game_log table.
-For team_codes
-* The 'start' and 'end' data for each team can be derived from the game_log table. 
+For game_log:       Each game lists info for 9 players from each team. This data can be represented by a separate table, which each player and their appearances tracked. 
+For park_codes:     The 'start' and 'end' dates can be derived from the game_log table. 
+For person_codes:     The 'player_debut', 'mgr_debut', and 'coach_debut' can be derived from data in the game_log table.
+For team_codes:     The 'start' and 'end' data for each team can be derived from the game_log table. 
 
 
 ## Planning a Normalized Schema
