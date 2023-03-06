@@ -341,6 +341,7 @@ head(check)
 ```
 This quick check helps us visualize the success of adding the new primary key to the table. 
 <br>
+<br>
 
 ## Looking for Normalization Opportunities 
 
@@ -363,31 +364,29 @@ For game_log:       Each game lists info for 9 players from each team. This data
 For park_codes:     The 'start' and 'end' dates can be derived from the game_log table. 
 For person_codes:     The 'player_debut', 'mgr_debut', and 'coach_debut' can be derived from data in the game_log table.
 For team_codes:     The 'start' and 'end' data for each team can be derived from the game_log table. 
-
+<br>
 
 ## Planning a Normalized Schema
 
 
-I am using dbdesigner.net to create my database schema. 
+I used dbdesigner.net to create the database schema. 
+
+![Normalized Data Schema](schema.png)
+<br>
 
 ## Creating the normalized database
 
 
-![Normalized Data Schema](schema.png)
-
-
-
-
 ### Begin with tables with no foreign keys
-
-*1) Alter the person_codes table to only have person_id, first_name, and last_name.*
+<br>
+**1) Alter the person_codes table to only have person_id, first_name, and last_name.**
 
 ```{r}
 dbListTables(connection)
 dbListFields(connection, "person_codes")
 ```
 
-```{r}
+```{r, results='hide'}
 drop_player_debut <- "
   ALTER TABLE person_codes
   DROP COLUMN player_debut;"
@@ -407,13 +406,14 @@ dbExecute(connection, drop_coach_debut)
 dbExecute(connection, drop_ump_debut)
 ```
 
+Let's see which columns are left. 
 ```{r}
 dbListFields(connection, "person_codes")
 ```
-The last thing to change the remaining column names into "person_id", "last_name", and "first_name".  
+Great. The last thing is to change these remaining column names into "person_id", "last_name", and "first_name".  
 
 
-```{r}
+```{r, results='hide'}
 rename_id_person_codes <- "
   ALTER TABLE person_codes
   RENAME COLUMN id to person_id;"
@@ -431,14 +431,17 @@ dbListFields(connection, "person_codes")
 
 ```
 
-*2) Edit park_codes to reflect changes above. We want to remove redundant data.* 
-  - remove 'start', 'end', and 'league' as this information will be available in the game_log table. 
+<br>
 
+**2) Edit park_codes to reflect changes above. We want to remove redundant data.**
+
+Let's look at the columns currently in this table. 
 ```{r}
 dbListFields(connection, "park_codes")
 ```
 
-```{r}
+We will remove 'start', 'end', and 'league' as these information will be available in the game_log table.
+```{r, results='hide'}
 drop_start_park <- "
   ALTER TABLE park_codes
   DROP COLUMN start;"
@@ -455,20 +458,24 @@ dbExecute(connection, drop_league_park)
 dbListFields(connection, "park_codes")
 ```
 
+<br>
 
 
 
 
 
+**3) Create the new "player_position_type" table. ** 
 
-*3) Create the new "player_position_type" table. I will import a .csv file containing all the information for this table.* 
+I will import a .csv file containing all the information for this table.
 
-Code to drop the table if it exists, we will recreate it in the proceeding code
-```{r}
+
+```{r, include=FALSE}
+# Code to drop the table if it exists, we will recreate it in the proceeding code
 player_position_precaution <- "
   DROP TABLE IF EXISTS player_position_type;"
 dbExecute(connection, player_position_precaution)
 ```
+
 
 csv import:
 ```{r}
@@ -487,7 +494,7 @@ check_player_pos <- "
 check <- dbGetQuery(connection, check_player_pos)
 head(check)
 ```
-
+<br>
 
 
 ### Add Game and Team tables
@@ -497,7 +504,8 @@ It will be easiest to create a new game_log table and import the selected column
 This new table will be called "game".
 Foreign keys can be set at this time. 
 
-```{r}
+```{r, include=FALSE}
+## drop tables if they already exist
 game_table_precaution <- "
   DROP TABLE IF EXISTS game;"
 dbExecute(connection, game_table_precaution)

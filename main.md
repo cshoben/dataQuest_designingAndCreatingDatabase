@@ -459,7 +459,7 @@ head(check)
     ## 5 18710509.0TRO0.0 18710509    TRO              0
 
 This quick check helps us visualize the success of adding the new
-primary key to the table. <br>
+primary key to the table. <br> <br>
 
 ## Looking for Normalization Opportunities
 
@@ -499,20 +499,20 @@ appearances tracked. For park_codes: The ‘start’ and ‘end’ dates can be
 derived from the game_log table. For person_codes: The ‘player_debut’,
 ‘mgr_debut’, and ‘coach_debut’ can be derived from data in the game_log
 table. For team_codes: The ‘start’ and ‘end’ data for each team can be
-derived from the game_log table.
+derived from the game_log table. <br>
 
 ## Planning a Normalized Schema
 
-I am using dbdesigner.net to create my database schema.
+I used dbdesigner.net to create the database schema.
+
+![Normalized Data Schema](schema.png) <br>
 
 ## Creating the normalized database
 
-![Normalized Data Schema](schema.png)
-
 ### Begin with tables with no foreign keys
 
-*1) Alter the person_codes table to only have person_id, first_name, and
-last_name.*
+<br> **1) Alter the person_codes table to only have person_id,
+first_name, and last_name.**
 
 ``` r
 dbListTables(connection)
@@ -543,27 +543,12 @@ drop_ump_debut <- "
   DROP COLUMN ump_debut;"
 
 dbExecute(connection, drop_player_debut)
-```
-
-    ## [1] 0
-
-``` r
 dbExecute(connection, drop_mgr_debut)
-```
-
-    ## [1] 0
-
-``` r
 dbExecute(connection, drop_coach_debut)
-```
-
-    ## [1] 0
-
-``` r
 dbExecute(connection, drop_ump_debut)
 ```
 
-    ## [1] 0
+Let’s see which columns are left.
 
 ``` r
 dbListFields(connection, "person_codes")
@@ -571,8 +556,8 @@ dbListFields(connection, "person_codes")
 
     ## [1] "id"    "last"  "first"
 
-The last thing to change the remaining column names into “person_id”,
-“last_name”, and “first_name”.
+Great. The last thing is to change these remaining column names into
+“person_id”, “last_name”, and “first_name”.
 
 ``` r
 rename_id_person_codes <- "
@@ -586,31 +571,17 @@ rename_first_person_codes <- "
   RENAME COLUMN first to first_name;"
 
 dbExecute(connection, rename_id_person_codes)
-```
-
-    ## [1] 0
-
-``` r
 dbExecute(connection, rename_last_person_codes)
-```
-
-    ## [1] 0
-
-``` r
 dbExecute(connection, rename_first_person_codes)
-```
-
-    ## [1] 0
-
-``` r
 dbListFields(connection, "person_codes")
 ```
 
-    ## [1] "person_id"  "last_name"  "first_name"
+<br>
 
-*2) Edit park_codes to reflect changes above. We want to remove
-redundant data.* - remove ‘start’, ‘end’, and ‘league’ as this
-information will be available in the game_log table.
+**2) Edit park_codes to reflect changes above. We want to remove
+redundant data.**
+
+Let’s look at the columns currently in this table.
 
 ``` r
 dbListFields(connection, "park_codes")
@@ -618,6 +589,9 @@ dbListFields(connection, "park_codes")
 
     ## [1] "park_id" "name"    "aka"     "city"    "state"   "start"   "end"    
     ## [8] "league"  "notes"
+
+We will remove ‘start’, ‘end’, and ‘league’ as these information will be
+available in the game_log table.
 
 ``` r
 drop_start_park <- "
@@ -631,41 +605,16 @@ drop_league_park <- "
   DROP COLUMN league;"
 
 dbExecute(connection, drop_start_park)
-```
-
-    ## [1] 0
-
-``` r
 dbExecute(connection, drop_end_park)
-```
-
-    ## [1] 0
-
-``` r
 dbExecute(connection, drop_league_park)
-```
-
-    ## [1] 0
-
-``` r
 dbListFields(connection, "park_codes")
 ```
 
-    ## [1] "park_id" "name"    "aka"     "city"    "state"   "notes"
+<br>
 
-*3) Create the new “player_position_type” table. I will import a .csv
-file containing all the information for this table.*
+**3) Create the new “player_position_type” table. **
 
-Code to drop the table if it exists, we will recreate it in the
-proceeding code
-
-``` r
-player_position_precaution <- "
-  DROP TABLE IF EXISTS player_position_type;"
-dbExecute(connection, player_position_precaution)
-```
-
-    ## [1] 0
+I will import a .csv file containing all the information for this table.
 
 csv import:
 
@@ -697,19 +646,13 @@ head(check)
     ## 5                 O5 Batter 5  offense
     ## 6                 O6 Batter 6  offense
 
+<br>
+
 ### Add Game and Team tables
 
 It will be easiest to create a new game_log table and import the
 selected columns versus deleting columns. This new table will be called
 “game”. Foreign keys can be set at this time.
-
-``` r
-game_table_precaution <- "
-  DROP TABLE IF EXISTS game;"
-dbExecute(connection, game_table_precaution)
-```
-
-    ## [1] 0
 
 ``` r
 create_game_table_query <- "
