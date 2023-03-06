@@ -9,7 +9,21 @@ Chelsea Shoben
 
 <br> <br>
 
-## Exploratory Data Analysis
+## Outline
+
+###### Exploratory data analysis
+
+###### Import data into SQLite
+
+###### Looking for normalization opportunities
+
+###### Planning a normalized schema
+
+###### Creating normalized database
+
+<br> <br>
+
+## Exploratory data analysis
 
 I will perform an EDA to assist in the creation of the normalized
 database. During this process I want to become familiar with the meaning
@@ -461,7 +475,7 @@ head(check)
 This quick check helps us visualize the success of adding the new
 primary key to the table. <br> <br>
 
-## Looking for Normalization Opportunities
+## Looking for normalization opportunities
 
 A first step to normalizing is removing redundant data. For example, the
 player names column in the game_log table such as ‘v_player_1\_name’,
@@ -501,13 +515,13 @@ derived from the game_log table. For person_codes: The ‘player_debut’,
 table. For team_codes: The ‘start’ and ‘end’ data for each team can be
 derived from the game_log table. <br>
 
-## Planning a Normalized Schema
+## Planning a normalized schema
 
 I used dbdesigner.net to create the database schema.
 
 ![Normalized Data Schema](schema.png) <br>
 
-## Creating the normalized database
+## Creating normalized database
 
 ### Begin with tables with no foreign keys
 
