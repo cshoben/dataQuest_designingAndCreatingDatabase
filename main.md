@@ -1,28 +1,28 @@
 Designing and Creating a Database: SQLite
 ================
+Chelsea Shoben
 
 *Resources and inspiration:*
 
-<https://app.dataquest.io/c/66/m/376/guided-project%3A-designing-and-creating-a-database/1/exploring-the-data>
-
+<https://app.dataquest.io/c/66/m/376/guided-project%3A-designing-and-creating-a-database/1/exploring-the-data>  
 <https://github.com/MuhuriJSON/DesigningAndCreatingDatabase/blob/master/DesigningAndCreatingDatabase.ipynb>
+
+<br> <br>
+
+## Exploratory Data Analysis
+
+I will perform an EDA to assist in the creation of the normalized
+database. During this process I want to become familiar with the meaning
+of each column in each file. And I will want to think about the
+relationships between columns both within each file and across different
+files. <br>
+
+###### Setup
 
 Import packages
 
 ``` r
 library(tidyverse)
-```
-
-    ## ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.2 ──
-    ## ✔ ggplot2 3.3.6     ✔ purrr   0.3.4
-    ## ✔ tibble  3.1.7     ✔ dplyr   1.0.9
-    ## ✔ tidyr   1.2.0     ✔ stringr 1.4.0
-    ## ✔ readr   2.1.2     ✔ forcats 0.5.1
-    ## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-    ## ✖ dplyr::filter() masks stats::filter()
-    ## ✖ dplyr::lag()    masks stats::lag()
-
-``` r
 library(dplyr)
 library(RSQLite)
 ```
@@ -31,101 +31,20 @@ Read in data files
 
 ``` r
 gameLog <- read_csv("data/game_log.csv")
-```
-
-    ## Warning: One or more parsing issues, see `problems()` for details
-
-    ## Rows: 171907 Columns: 161
-    ## ── Column specification ────────────────────────────────────────────────────────
-    ## Delimiter: ","
-    ## chr (74): day_of_week, v_name, v_league, h_name, h_league, day_night, protes...
-    ## dbl (83): date, number_of_game, v_game_number, h_game_number, v_score, h_sco...
-    ## lgl  (4): completion, forfeit, rf_umpire_id, rf_umpire_name
-    ## 
-    ## ℹ Use `spec()` to retrieve the full column specification for this data.
-    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-
-``` r
 parkCodes <- read_csv("data/park_codes.csv")
-```
-
-    ## Rows: 252 Columns: 9
-    ## ── Column specification ────────────────────────────────────────────────────────
-    ## Delimiter: ","
-    ## chr (9): park_id, name, aka, city, state, start, end, league, notes
-    ## 
-    ## ℹ Use `spec()` to retrieve the full column specification for this data.
-    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-
-``` r
 personCodes <- read_csv("data/person_codes.csv")
-```
-
-    ## Rows: 20494 Columns: 7
-    ## ── Column specification ────────────────────────────────────────────────────────
-    ## Delimiter: ","
-    ## chr (7): id, last, first, player_debut, mgr_debut, coach_debut, ump_debut
-    ## 
-    ## ℹ Use `spec()` to retrieve the full column specification for this data.
-    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-
-``` r
 teamCodes <- read_csv("data/team_codes.csv")
 ```
 
-    ## Rows: 150 Columns: 8
-    ## ── Column specification ────────────────────────────────────────────────────────
-    ## Delimiter: ","
-    ## chr (5): team_id, league, city, nickname, franch_id
-    ## dbl (3): start, end, seq
-    ## 
-    ## ℹ Use `spec()` to retrieve the full column specification for this data.
-    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+<br> <br>
 
-### Goal: Exploratory Data Analysis
+##### gameLog
 
-I will perform an EDA to assist in the creation of the normalized
-database. During this process I want to become familiar with the meaning
-of each column in each file. And I will want to think about the
-relationships between columns both within each file and across different
-files.
+The gameLog table contains the following number of rows and columns:
+171907, 161.
 
-Let’s start by looking at the number of columns and rows.
-
-``` r
-dim(gameLog)
-```
-
-    ## [1] 171907    161
-
-It looks like we have over 171k entries (games) and 161 columns.
-
-Let’s look at the first 10 rows to get a feel for the data.
-
-``` r
-head(gameLog, 10)
-```
-
-    ## # A tibble: 10 × 161
-    ##        date number_of_game day_of_week v_name v_league v_game_number h_name
-    ##       <dbl>          <dbl> <chr>       <chr>  <chr>            <dbl> <chr> 
-    ##  1 18710504              0 Thu         CL1    <NA>                 1 FW1   
-    ##  2 18710505              0 Fri         BS1    <NA>                 1 WS3   
-    ##  3 18710506              0 Sat         CL1    <NA>                 2 RC1   
-    ##  4 18710508              0 Mon         CL1    <NA>                 3 CH1   
-    ##  5 18710509              0 Tue         BS1    <NA>                 2 TRO   
-    ##  6 18710511              0 Thu         CH1    <NA>                 2 CL1   
-    ##  7 18710513              0 Sat         WS3    <NA>                 2 CL1   
-    ##  8 18710513              0 Sat         CH1    <NA>                 3 FW1   
-    ##  9 18710515              0 Mon         WS3    <NA>                 3 FW1   
-    ## 10 18710516              0 Tue         TRO    <NA>                 2 BS1   
-    ## # … with 154 more variables: h_league <chr>, h_game_number <dbl>,
-    ## #   v_score <dbl>, h_score <dbl>, length_outs <dbl>, day_night <chr>,
-    ## #   completion <lgl>, forfeit <lgl>, protest <chr>, park_id <chr>,
-    ## #   attendance <dbl>, length_minutes <dbl>, v_line_score <chr>,
-    ## #   h_line_score <chr>, v_at_bats <dbl>, v_hits <dbl>, v_doubles <dbl>,
-    ## #   v_triples <dbl>, v_homeruns <dbl>, v_rbi <dbl>, v_sacrifice_hits <dbl>,
-    ## #   v_sacrifice_flies <dbl>, v_hit_by_pitch <dbl>, v_walks <dbl>, …
+Let’s explore the first 10 rows using `head(gameLog, 10)` to get a feel
+for the data.
 
 Included with these files is a .txt file containing information about
 the fields in the main file (game_log.csv).
@@ -134,22 +53,33 @@ the fields in the main file (game_log.csv).
 fieldData <- read.delim("data/game_log_fields.txt")
 ```
 
-After exploring the gameLog file (fieldData), I have noted that these
-data give basic information about the game including game number, game
-number, visiting team info (name, league, manager, pitchers, batters,
-offensive stats, pitching stats, and defensive stats), same for home
-team, game information (scoring, location and completion) , umpire info,
-and acquisition info (how complete the data is for that game).
+<br> After exploring the gameLog and fieldData files, I have noted that
+these data give basic information about the game including game number,
+game number, visiting team info (name, league, manager, pitchers,
+batters, offensive stats, pitching stats, and defensive stats), same for
+home team, game information (scoring, location and completion) , umpire
+info, and acquisition info (how complete the data is for that game).
+<br> <br>
 
 #### Focus questions to answer:
 
-**What does each defensive position number represent?** Each team’s
+<br> **What does each defensive position number represent?** Each team’s
 starting players has their player ID, name, and defensive position
 listed in the gameLog. Values 1-9 are used. According to Wikipedia
 (<https://en.wikipedia.org/wiki/Baseball_positions>) the 9 positions are
-designated as follows: 1 - pitcher 2 - catcher 3 - first baseman 4 -
-second baseman 5 - third baseman 6 - shortstop 7 - left fielder 8 -
-center fielder 9 - right fielder
+designated as follows:
+
+- 1 - pitcher
+- 2 - catcher
+- 3 - first baseman
+- 4 - second baseman
+- 5 - third baseman
+- 6 - shortstop
+- 7 - left fielder
+- 8 - center fielder
+- 9 - right fielder
+
+<br>
 
 **What are the values in the various league fields, and which leagues do
 they represent?**
@@ -168,14 +98,18 @@ unique(gameLog$h_league)
 
 It appears that there are 6 difference leagues referenced by two capital
 letters in this data set. Using Google, I have found the following
-professional league information. NL - National League (part of MLB) AA -
-American Association (independent, founded in 2005) UA - Union
-Association (used to be MLB, only exists in 1884) PL - Players League
-(independent, only existed 1890?) AL - American League (part of MLB)
-FL - Federal League (independent, 1914-1915) I would like to check these
-findings against my data.
+professional league information.
 
-Let’s first check the date range that we see the AA league
+- NL - National League (part of MLB)
+- AA - American Association (independent, founded in 2005)
+- UA - Union Association (used to be MLB, only exists in 1884)
+- PL - Players League (independent, only existed 1890?)
+- AL - American League (part of MLB)
+- FL - Federal League (independent, 1914-1915) I would like to check
+  these findings against my data.
+
+Let’s check that the date range listed for the AA league matches our
+data.
 
 ``` r
 aaLeague <- 
@@ -194,16 +128,20 @@ max(aaLeague$date)
 Here I used the ‘\|’ aka OR operator to select all games where either
 the visiting team or the home team was in the AA league. It looks like
 the AA league is only listed for games played from 1882 to 1884. With
-more googling, I found that there have existed two American Association
+more Googling, I found that there have existed two American Association
 baseball leagues. The American Association of Base Ball Clubs was the
 one that existed in the 19th century, from 1882 to 1891. This matches up
 with the min and max date that we see in the filtered tiddle.
 
-Updates league names: NL - National League (part of MLB) AA - American
-Association *of Base Ball Clubs* (independent, 1882-1891) UA - Union
-Association (used to be MLB, only exists in 1884) PL - Players League
-(independent, only existed 1890?) AL - American League (part of MLB)
-FL - Federal League (independent, 1914-1915)
+Updates league names:
+
+- NL - National League (part of MLB)
+- AA - American Association *of Base Ball Clubs* (independent,
+  1882-1891)
+- UA - Union Association (used to be MLB, only exists in 1884)
+- PL - Players League (independent, only existed 1890?)
+- AL - American League (part of MLB)
+- FL - Federal League (independent, 1914-1915)
 
 I will next check the Union Association
 
@@ -261,9 +199,14 @@ max(flLeague$date)
 
 Hooray! This also lines up with my Googling.
 
+<br>
+
 #### Exploring helper files
 
-Let’s now explore the additional “helper” files loaded previously.
+Let’s now explore the additional “helper” files loaded previously. This
+includes *parkCodes*, *personCodes*, *teamCodes* files.
+
+##### parkCodes
 
 ``` r
 dim(parkCodes)
@@ -293,7 +236,9 @@ The ‘parkCodes’ file tells us the details for each park, with the unique
 identifier being the park_id column. This appears to be an exhaustive
 list, including parks that have closed. The rows appear to be organized
 alphabetically based on the park_id column. park_id is also a column in
-the gameLog file.
+the gameLog file. <br>
+
+##### personCodes
 
 ``` r
 dim(personCodes)
@@ -325,7 +270,9 @@ over 20,000 people codes. Cross referencing the gameLog file, the id
 field in the personCodes file is used in the hp_umpire_id, v_manager_id,
 h_manager_id, winning_pitcher_id, losing_pitcher_id, and many more
 fields on that is \*\_id giving the person code for different positions
-in the game.
+in the game. <br>
+
+##### teamCodes
 
 Last, let’s explore the teamCodes file.
 
@@ -385,9 +332,11 @@ table(teamCodes$seq)
 And the majority of the values are ‘1’. Still not sure what it means but
 maybe it will make more sense as I move forward through the project.
 
+<br>
+
 ## Importing Data into SQLite
 
-Step 1: Designate a primary key
+#### Step 1: Designate a primary key
 
 Exploring the data dictionary available from Retrosheet (the website
 this data came from), we see that they have already designed a key using
@@ -396,53 +345,24 @@ SQLite we will construct this unique_id column ourselves using these
 values to match the way Retrosheet refers to unique events.
 
 <https://app.dataquest.io/c/66/m/376/guided-project%3A-designing-and-creating-a-database/2/importing-data-into-sqlite>
+<br>
 
-This establishes a connection to an existing database or creates one if
-it does not already exist. The database name here is “mlb.db”
+#### Step 2: Create the database
+
+I will be using the package RSQLite to create and modify the database.
+`dbConnect()` establishes a connection to an existing database or
+creates one if it does not already exist. The database name here is
+“mlb.db”
 
 ``` r
 connection <- dbConnect(SQLite(), "mlb.db")
 ```
 
-Drop all existing tables so code can be re-ran.
-
-``` r
-game_log_precaution <- "
-  DROP TABLE IF EXISTS game_log;"
-dbExecute(connection, game_log_precaution)
-```
-
-    ## [1] 0
-
-``` r
-person_codes_precaution <- "
-  DROP TABLE IF EXISTS person_codes;"
-dbExecute(connection, person_codes_precaution)
-```
-
-    ## [1] 0
-
-``` r
-team_codes_precaution <- "
-  DROP TABLE IF EXISTS team_codes;"
-dbExecute(connection, team_codes_precaution)
-```
-
-    ## [1] 0
-
-``` r
-park_codes_precaution <- "
-  DROP TABLE IF EXISTS park_codes;"
-dbExecute(connection, park_codes_precaution)
-```
-
-    ## [1] 0
-
 We want to write the name by referring to the “conn” which is the
 connection object created above. We will call the table “game_log” and
-we will used the data from the gameLog object. It will be easier to load
+we will use the data from the gameLog object. It will be easier to load
 the data into a variable and pass that as the value arg for
-‘dbWriteTable()’ rather have adding all the data manually.
+`dbWriteTable()` rather have adding all the data manually.
 
 ``` r
 RSQLite::dbWriteTable(connection, "game_log", gameLog, 
@@ -471,7 +391,9 @@ dbListTables(connection)
     ## [1] "game"                 "game_log"             "park_codes"          
     ## [4] "person_codes"         "player_position_type" "team_codes"
 
-Success. All four have been made.
+Success. All four have been made. <br>
+
+#### Step 3: Create/add the primary key
 
 Now we will create the new column in *game_log* to hold the unique ID
 that will refer to each row. This will be a compound key, using data
@@ -535,6 +457,8 @@ head(check)
     ## 3 18710506.0RC10.0 18710506    RC1              0
     ## 4 18710508.0CH10.0 18710508    CH1              0
     ## 5 18710509.0TRO0.0 18710509    TRO              0
+
+<br>
 
 ## Looking for Normalization Opportunities
 
@@ -655,9 +579,7 @@ drop_coach_debut <- "
 drop_ump_debut <- "
   ALTER TABLE person_codes
   DROP COLUMN ump_debut;"
-```
 
-``` r
 dbExecute(connection, drop_player_debut)
 ```
 
@@ -700,9 +622,7 @@ rename_last_person_codes <- "
 rename_first_person_codes <- "
   ALTER TABLE person_codes
   RENAME COLUMN first to first_name;"
-```
 
-``` r
 dbExecute(connection, rename_id_person_codes)
 ```
 
@@ -747,9 +667,7 @@ drop_end_park <- "
 drop_league_park <- "
   ALTER TABLE park_codes
   DROP COLUMN league;"
-```
 
-``` r
 dbExecute(connection, drop_start_park)
 ```
 
@@ -792,14 +710,6 @@ csv import:
 ``` r
 playerPositionType = read_csv("data/appearance_type.csv")
 ```
-
-    ## Rows: 31 Columns: 3
-    ## ── Column specification ────────────────────────────────────────────────────────
-    ## Delimiter: ","
-    ## chr (3): appearance_type_id, name, category
-    ## 
-    ## ℹ Use `spec()` to retrieve the full column specification for this data.
-    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 
 Use the csv to create the new table
 
