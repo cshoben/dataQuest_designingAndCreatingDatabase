@@ -12,7 +12,7 @@ https://app.dataquest.io/c/66/m/376/guided-project%3A-designing-and-creating-a-d
 https://github.com/MuhuriJSON/DesigningAndCreatingDatabase/blob/master/DesigningAndCreatingDatabase.ipynb
 
 <br>
-<br>
+
 
 
 ```{r setup, include=FALSE} 
@@ -50,7 +50,18 @@ library(RSQLite)
 
 Read in data files
 ```{r, results='hide'}
-gameLog <- read_csv("data/game_log.csv")
+# It is important the game_Log.csv has some column types explicitly set as type 'c' which is 'character'. If we do not, data will be lost. 
+gameLog <- read_csv("data/game_log.csv", col_types = cols(.default = "c",
+                                 v_league = "c", h_league = "c",
+                                 `3b_umpire_id` = "c", `3b_umpire_name` = "c",
+                                 `2b_umpire_id` = "c", `2b_umpire_name` = "c",
+                                 `lf_umpire_id` = "c", `lf_umpire_name` = "c",
+                                 `rf_umpire_id` = "c", `rf_umpire_name` = "c",
+                                 completion = "c", winning_rbi_batter_id = "c",
+                                 winning_rbi_batter_id_name = "c", protest = "c",
+                                 v_first_catcher_interference = "c", 
+                                 h_first_catcher_interference = "c"))
+
 parkCodes <- read_csv("data/park_codes.csv")
 personCodes <- read_csv("data/person_codes.csv")
 teamCodes <- read_csv("data/team_codes.csv")
@@ -262,6 +273,13 @@ park_codes_precaution <- "
   DROP TABLE IF EXISTS park_codes;"
 dbExecute(connection, park_codes_precaution)
 
+game_precaution <- "
+  DROP TABLE IF EXISTS game;"
+dbExecute(connection, game_precaution)
+
+player_position_precaution <- "
+  DROP TABLE IF EXISTS player_position_type;"
+dbExecute(connection, player_position_precaution)
 
 ```
 
@@ -504,11 +522,15 @@ head(check)
 
 
 ### Add Game and Team tables
-
-
+<br>
+#### Game Table
 It will be easiest to create a new game_log table and import the selected columns versus deleting columns. 
 This new table will be called "game".
 Foreign keys can be set at this time. 
+Any column that refers to a specific player will be skipped and instead put into the player positions table. 
+Removed day of the week column, redundant. This can be derived from the date. 
+Upon inspection, the gameLog column 'completion' is NA for all entries. I doubt all games were not completed, making me skeptical that I can rely on this column to be correct. I will remove this column. 
+
 
 ```{r, include=FALSE}
 ## drop tables if they already exist
@@ -517,7 +539,7 @@ game_table_precaution <- "
 dbExecute(connection, game_table_precaution)
 ```
 
-
+SQL doesn't support BOOLEAN but SQLite is able to handle this type. We will use this in the 'day' column with 0 being night and 1 being day. 
 ```{r}
 create_game_table_query <- "
   CREATE TABLE IF NOT EXISTS game (
@@ -526,8 +548,8 @@ create_game_table_query <- "
     number_of_game INTEGER, 
     park_id TEXT,
     length_outs INTEGER, 
-    day TEXT, 
-    completion TEXT, 
+    day BOOLEAN,
+    completion TEXT,
     forfeit TEXT, 
     protest TEXT,
     attendance INTEGER, 
@@ -557,7 +579,7 @@ insert_to_game_query <- '
       ELSE NULL
       END
       AS day,
-    completion, 
+    completion,
     forfeit, 
     protest, 
     attendance,
@@ -570,3 +592,42 @@ insert_to_game_query <- '
 dbExecute(connection, insert_to_game_query)
 dbListFields(connection, "game")
 ```
+
+```{r}
+check_query_6 <- "SELECT * FROM game LIMIT 5;"
+check <- dbGetQuery(connection, check_query_6)
+head(check)
+```
+
+#### Team Table
+
+
+```{r}
+head(teamCodes)
+```
+
+```{r}
+gameLog[grep("ALT", gameLog$v_name), ] 
+```
+
+```{r}
+gameLog[grep("ALT", gameLog$h_name), ] 
+```
+ I believe you can! 
+
+
+```{r}
+head(gameLog)
+```
+
+
+```{r}
+create_team_command <- "
+  CREATE TABLE IF NOT EXISTS team (
+    team_id TEXT PRIMARY KEY, 
+    league TEXT, 
+    city TEXT,
+    nickname TEXT,
+    franch_id TEXT"
+```
+
